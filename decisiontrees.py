@@ -17,16 +17,20 @@ class Node():
         self.target = target
         self.isLeaf = isLeaf
 
+#converting into dataframe
 def dataframe(data):
         return pd.read_csv(data)
 
+#shuffling the datframe
 def shuff(data):
         return shuffle(data)
-
+        
+#80-20 split on the data frame
 def ttsplit(data):
         X, y = train_test_split(data, test_size=0.2, random_state=42) 
         return X,y
 
+#calculating the entropy of an attribute 
 def entropy(target_col):
     val ,counts = np.unique(target_col,return_counts = True)
     entropy = 0
@@ -34,6 +38,7 @@ def entropy(target_col):
         entropy += (-counts[i]/np.sum(counts)) * np.log2(counts[i]/np.sum(counts))
     return entropy
 
+#calculating the information gain of an attribute
 def infogain(data, split_name, target_name = 'target'):
     total_entropy = entropy(data[target_name])
     vals,counts= np.unique(data[split_name],return_counts=True)
@@ -43,22 +48,27 @@ def infogain(data, split_name, target_name = 'target'):
         average_entropy  += (counts[i]/ np.sum(counts))* entropy(attribute)
     return total_entropy - average_entropy
 
+#function to find if all the values in the array are unique
 def unique(s):
-    a = s.to_numpy() # s.values (pandas<0.24)
+    a = s.to_numpy() 
     return (a[0] == a).all()
 
+#decision tree creation
 def decision_tree(data, attributes, label, parent=None):
-    
+    #create node
     node = Node()
+    #check if all the data in the target column have the same value
     if(unique(data['target'])==True):
         node.target = data['target'].value_counts().idxmax()
         node.isLeaf = True
         return node
+    #check if the features set is empty 
     elif(len(attributes)==0):
         node.isLeaf = True
         node.target = data['target'].value_counts().idxmax()
         return node
 
+    #find the best attribute with helper functions and remove it from the attribute list
     infogains = []
     for attribute in attributes:
         infogains.append(infogain(data, attribute, label))
@@ -68,18 +78,22 @@ def decision_tree(data, attributes, label, parent=None):
         if(attribute!=best):
             new_attributes.append(attribute)
     
-    value, count = np.unique(data[best], return_counts= True)
+    #handling leaf nodes
+    value = np.unique(data[best])
     if len(value)!=3:
+        #if one of the nodes is empty
         node.isLeaf = True
         node.target = data['target'].value_counts().idxmax()
         return node
     else:
+        #recrusive calls to form the decison rree
         node.feature = best
         node.ch0 = decision_tree(data[data[best] == 0], new_attributes, label)
         node.ch1 = decision_tree(data[data[best] == 1], new_attributes, label)
         node.ch2 = decision_tree(data[data[best] == 2], new_attributes, label)
         return node
 
+#predicting for a particular row
 def predict(test, node):
     if(node.isLeaf==True):
         return node.target
@@ -92,20 +106,22 @@ def predict(test, node):
         elif branch == 2:
             return predict(test, node.ch2)
 
+#testing for all the rows in the test set
 def test(data,tree):
     #convert it to a dictionary
     queries = data.iloc[:,:-1].to_dict(orient = "records")
     targets = data.iloc[:,-1:].to_dict(orient = "records")
-    #Create a empty DataFrame in whose columns the prediction of the tree are stored
+    #create a empty DataFrame to store the predictions
     predicted = pd.DataFrame(columns=["predicted"]) 
     count = 0
-    #Calculate the prediction accuracy
+    #calculate the prediction accuracy by comparing prediction with the target values
     for i in range(len(data)):
         predicted.loc[i,"predicted"] = predict(queries[i],tree) 
         if(predicted.loc[i,"predicted"] == float(targets[i]['target'])):
             count+=1
     return count/len(data)
 
+#plotting function for training data
 def training_plot(k):    
     accuracies = []
     label = 'target'
@@ -124,6 +140,7 @@ def training_plot(k):
     # Show plot
     plt.show()
 
+#plotting function for testing data
 def testing_plot(k):    
     accuracies = []
     attributes = k.columns[:-1]
@@ -142,11 +159,11 @@ def testing_plot(k):
     # Show plot
     plt.show()
 
-
+#driver code for calling the functions
 data = 'votes.csv'
 df = dataframe(data)
 training_plot(df)
-# testing_plot(df)
+testing_plot(df)
 
 
 
