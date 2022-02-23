@@ -147,7 +147,7 @@ def plot_testing_accuracy():
     plt.errorbar(time, mean_acc, yerr = std_acc, label ='Mean Testing Accuracies')
     plt.show()
 
-
+#driver code calling plotting functions
 plot_training_accuracy()
 plot_testing_accuracy()
 
